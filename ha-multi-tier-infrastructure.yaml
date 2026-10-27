@@ -1,0 +1,192 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: HA web tier - VPC, 2 public + 2 private subnets (2 AZs), bastion host, ALB, 2 private web servers
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Pick your existing EC2 key pair
+
+Resources:
+  # ----- VPC and Internet Gateway -----
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags: [{Key: Name, Value: HA-VPC}]
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags: [{Key: Name, Value: HA-IGW}]
+  GatewayAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: {VpcId: !Ref MyVPC, InternetGatewayId: !Ref InternetGateway}
+
+  # ----- Subnets: 1 public + 1 private in each of 2 AZs -----
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags: [{Key: Name, Value: HA-Public-Subnet-AZ1}]
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags: [{Key: Name, Value: HA-Public-Subnet-AZ2}]
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: 10.0.11.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags: [{Key: Name, Value: HA-Private-Subnet-AZ1}]
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: 10.0.12.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags: [{Key: Name, Value: HA-Private-Subnet-AZ2}]
+
+  # ----- Route tables -----
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: {VpcId: !Ref MyVPC, Tags: [{Key: Name, Value: HA-Public-RT}]}
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttach
+    Properties: {RouteTableId: !Ref PublicRouteTable, DestinationCidrBlock: 0.0.0.0/0, GatewayId: !Ref InternetGateway}
+  PublicSubnet1RTA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: {SubnetId: !Ref PublicSubnet1, RouteTableId: !Ref PublicRouteTable}
+  PublicSubnet2RTA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: {SubnetId: !Ref PublicSubnet2, RouteTableId: !Ref PublicRouteTable}
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: {VpcId: !Ref MyVPC, Tags: [{Key: Name, Value: HA-Private-RT}]}
+  PrivateSubnet1RTA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: {SubnetId: !Ref PrivateSubnet1, RouteTableId: !Ref PrivateRouteTable}
+  PrivateSubnet2RTA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: {SubnetId: !Ref PrivateSubnet2, RouteTableId: !Ref PrivateRouteTable}
+
+  # ----- Security groups -----
+  BastionSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SSH to the bastion from anywhere
+      VpcId: !Ref MyVPC
+      SecurityGroupIngress: [{IpProtocol: tcp, FromPort: 22, ToPort: 22, CidrIp: 0.0.0.0/0}]
+      Tags: [{Key: Name, Value: HA-Bastion-SG}]
+  ALBSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: HTTP from the internet to the ALB
+      VpcId: !Ref MyVPC
+      SecurityGroupIngress: [{IpProtocol: tcp, FromPort: 80, ToPort: 80, CidrIp: 0.0.0.0/0}]
+      Tags: [{Key: Name, Value: HA-ALB-SG}]
+  WebServerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: HTTP only from the ALB, SSH only from the bastion
+      VpcId: !Ref MyVPC
+      SecurityGroupIngress:
+        - {IpProtocol: tcp, FromPort: 80, ToPort: 80, SourceSecurityGroupId: !Ref ALBSG}
+        - {IpProtocol: tcp, FromPort: 22, ToPort: 22, SourceSecurityGroupId: !Ref BastionSG}
+      Tags: [{Key: Name, Value: HA-WebServer-SG}]
+
+  # ----- Bastion host -----
+  BastionHost:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      ImageId: ami-0c7632fb77f35db43
+      KeyName: !Ref KeyName
+      SubnetId: !Ref PublicSubnet1
+      SecurityGroupIds: [!Ref BastionSG]
+      Tags: [{Key: Name, Value: HA-Bastion-Host}]
+
+  # ----- Private web servers -----
+  WebServer1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      ImageId: ami-0c7632fb77f35db43
+      KeyName: !Ref KeyName
+      SubnetId: !Ref PrivateSubnet1
+      SecurityGroupIds: [!Ref WebServerSG]
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          mkdir -p /opt/website
+          chown ubuntu:ubuntu /opt/website
+          cd /opt/website
+          echo "<h1>Welcome from Private Server 1 (AZ1)</h1>" > index.html
+          nohup python3 -m http.server 80 > /dev/null 2>&1 &
+      Tags: [{Key: Name, Value: HA-WebServer-1}]
+
+  WebServer2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      ImageId: ami-0c7632fb77f35db43
+      KeyName: !Ref KeyName
+      SubnetId: !Ref PrivateSubnet2
+      SecurityGroupIds: [!Ref WebServerSG]
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          mkdir -p /opt/website
+          chown ubuntu:ubuntu /opt/website
+          cd /opt/website
+          echo "<h1>Welcome from Private Server 2 (AZ2)</h1>" > index.html
+          nohup python3 -m http.server 80 > /dev/null 2>&1 &
+      Tags: [{Key: Name, Value: HA-WebServer-2}]
+
+  # ----- Application Load Balancer -----
+  ALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    DependsOn: GatewayAttach
+    Properties:
+      Scheme: internet-facing
+      Subnets: [!Ref PublicSubnet1, !Ref PublicSubnet2]
+      SecurityGroups: [!Ref ALBSG]
+      Tags: [{Key: Name, Value: HA-ALB}]
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref MyVPC
+      Protocol: HTTP
+      Port: 80
+      TargetType: instance
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 10
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      Targets: [{Id: !Ref WebServer1, Port: 80}, {Id: !Ref WebServer2, Port: 80}]
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ALB
+      Port: 80
+      Protocol: HTTP
+      DefaultActions: [{Type: forward, TargetGroupArn: !Ref TargetGroup}]
+
+Outputs:
+  WebsiteURL:
+    Value: !Sub 'http://${ALB.DNSName}'
+  BastionPublicIP:
+    Value: !GetAtt BastionHost.PublicIp
+  WebServer1PrivateIP:
+    Value: !GetAtt WebServer1.PrivateIp
+  WebServer2PrivateIP:
+    Value: !GetAtt WebServer2.PrivateIp
