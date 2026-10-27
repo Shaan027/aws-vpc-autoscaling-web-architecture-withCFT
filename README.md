@@ -1,4 +1,4 @@
-# Highly Available and Secure Multi-Tier Web Application Infrastructure on AWS
+# Highly Available and Secure Multi-Tier Web Application Infrastructure on AWS WITH CFT
 
 ![AWS](https://img.shields.io/badge/AWS-CloudFormation-FF9900?logo=amazonaws&logoColor=white)
 ![IaC](https://img.shields.io/badge/IaC-YAML-blue)
