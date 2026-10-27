@@ -275,4 +275,4 @@ This project is a learning and demonstration environment. These are the known ga
 
 ## Author and license
 
-Created by [Shaan027](https://github.com/Shaan027). Linkdin- https://in.linkedin.com/in/shantanu-gawai-529258242
+Created by [Shaan027](https://github.com/Shaan027). Linkdin-shantanu-gawai-529258242
