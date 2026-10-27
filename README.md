@@ -275,4 +275,4 @@ This project is a learning and demonstration environment. These are the known ga
 
 ## Author and license
 
-Created by [Shaan027](https://github.com/Shaan027). | [LinkedIn](https://www.linkedin.com/in/your-profile-link)
+Created by [Shaan027](https://github.com/Shaan027). | [LinkedIn](https://www.linkedin.com/in/shantanu-gawai-529258242)
