@@ -1,0 +1,12 @@
+# Never commit key pairs or credentials
+*.pem
+*.key
+.aws/
+.env
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.zip
