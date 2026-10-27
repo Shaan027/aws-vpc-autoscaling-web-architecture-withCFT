@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="server-id" content="1">
+<title>Server 1 | Multi-Tier AWS Lab</title>
+<style>
+:root{--c1:#D9480F;--c2:#0B7A75;--paper:#EDF2F7;--card:#F8FAFC;--ink:#0F2238;--mute:#52667D;--line:#B8C7D9;--ok:#2F9E44;--err:#C92A2A;--warn:#E8A317}
+body.s1{--me:var(--c1)} body.s2{--me:var(--c2)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;line-height:1.55;
+ background-image:linear-gradient(rgba(184,199,217,.55) 1px,transparent 1px),linear-gradient(90deg,rgba(184,199,217,.55) 1px,transparent 1px);background-size:48px 48px}
+main{max-width:1020px;margin:0 auto;padding:34px 18px 80px}
+.hero{display:flex;flex-wrap:wrap;gap:18px 40px;align-items:flex-end;justify-content:space-between;padding-bottom:22px;border-bottom:3px solid var(--me)}
+.tag{display:inline-flex;gap:10px;align-items:center;font-weight:600;color:var(--mute)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 4px rgba(47,158,68,.18)}
+h1{font-size:clamp(2.8rem,10vw,6rem);line-height:.95;margin:10px 0 8px;letter-spacing:-.035em;font-weight:800}
+h1 span{color:var(--me)}
+.lead{max-width:56ch;color:var(--mute);margin:0}
+.facts{display:grid;gap:8px;min-width:230px}
+.fact{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--me);padding:6px 12px;border-radius:4px;font-size:.9rem}
+.fact b{display:block}
+section{margin-top:44px}
+h2{font-size:1.7rem;margin:0 0 4px;letter-spacing:-.015em}
+h3{font-size:1rem;margin:0 0 8px}
+.sub{color:var(--mute);margin:0 0 16px;max-width:70ch}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px}
+svg{width:100%;height:auto;display:block}
+svg text{font-family:inherit;fill:var(--ink)}
+.hot{cursor:pointer}
+.hot:focus-visible{outline:3px solid var(--me);outline-offset:3px}
+.info{margin-top:12px;padding:12px 14px;border-left:5px solid var(--ink);background:#E6EDF5;border-radius:3px;min-height:3.6em}
+.info b{display:block}
+.ctrl{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+@media(max-width:820px){.ctrl{grid-template-columns:1fr}}
+.grp{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:12px}
+.grp p{margin:0 0 10px;font-size:.88rem;color:var(--mute)}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;font-weight:700;font-size:.92rem;cursor:pointer;border-radius:4px;padding:8px 14px;border:2px solid var(--me);background:var(--me);color:#fff}
+button.ghost{background:transparent;color:var(--me)}
+button.bad{background:transparent;border-color:var(--err);color:var(--err)}
+button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+button:disabled{opacity:.5;cursor:wait}
+button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.two{display:grid;grid-template-columns:1fr 1.5fr;gap:14px;margin-top:14px}
+@media(max-width:820px){.two{grid-template-columns:1fr}}
+.bars{display:grid;gap:10px}
+.bar{display:grid;grid-template-columns:78px 1fr 34px;align-items:center;gap:10px;font-weight:700;font-size:.92rem}
+.track{height:26px;background:#E2E9F1;border-radius:3px;overflow:hidden}
+.fill{height:100%;width:0;transition:width .3s ease}
+.f1{background:var(--c1)} .f2{background:var(--c2)} .fe{background:var(--err)}
+.log{height:330px;overflow:auto;display:flex;flex-direction:column;gap:6px;font-size:.88rem}
+.ent{padding:5px 9px;border-left:4px solid var(--mute);background:#fff;border-radius:2px}
+.ent.ok1{border-color:var(--c1)} .ent.ok2{border-color:var(--c2)} .ent.err{border-color:var(--err);background:#FFF1F1} .ent.sys{border-color:var(--ink)}
+.ent time{color:var(--mute);margin-right:8px;font-size:.8rem}
+.note{margin-top:12px;color:var(--mute);min-height:1.5em;font-size:.95rem}
+.hist{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{padding:3px 10px;border-radius:3px;color:#fff;font-weight:700;font-size:.85rem}
+.chip.c1{background:var(--c1)} .chip.c2{background:var(--c2)}
+ol.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;gap:12px}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:42px 1fr;gap:14px;align-items:start}
+ol.steps li::before{content:counter(s);width:42px;height:42px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:800}
+ol.steps li.me::before{background:var(--me)}
+ol.steps b{display:block}
+details{margin-top:14px}
+summary{cursor:pointer;font-weight:700}
+pre{background:var(--ink);color:#E6EEF7;padding:12px;border-radius:4px;overflow-x:auto;font-size:.88rem}
+code{font-family:Consolas,"Courier New",monospace}
+footer{margin-top:50px;color:var(--mute);font-size:.88rem}
+@media(prefers-reduced-motion:reduce){.fill{transition:none}}
+
+html{scroll-behavior:smooth}
+section{scroll-margin-top:64px}
+nav{position:sticky;top:0;z-index:20;background:rgba(237,242,247,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+nav div{max-width:1020px;margin:0 auto;padding:8px 18px;display:flex;gap:4px;overflow-x:auto;align-items:center}
+nav b{margin-right:10px;white-space:nowrap;color:var(--me)}
+nav a{white-space:nowrap;color:var(--ink);text-decoration:none;font-weight:600;font-size:.88rem;padding:4px 10px;border-radius:3px}
+nav a:hover,nav a:focus-visible{background:var(--me);color:#fff;outline:none}
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:22px}
+.stat{background:var(--ink);color:#fff;border-radius:6px;padding:14px 16px}
+.stat b{display:block;font-size:2.1rem;line-height:1}
+.stat span{display:block;margin-top:8px;font-size:.88rem;line-height:1.35;color:#C9D6E6}
+@media(max-width:720px){.strip{grid-template-columns:repeat(2,1fr)}}
+.tour{margin-top:12px;display:none;border:2px solid var(--me);border-radius:6px;background:#fff;padding:14px 16px}
+.tour.show{display:block}
+.tour h3{font-size:1.2rem;margin:0 0 4px}
+.tour .cnt{color:var(--mute);font-size:.85rem;margin-bottom:4px}
+.tour p{margin:0 0 12px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-top:5px solid var(--me);border-radius:6px;padding:14px}
+.card h3{margin:0 0 6px;font-size:1.05rem}
+.card p{margin:0;font-size:.93rem}
+.wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.93rem;background:#fff}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:#E6EDF5}
+td.no{color:var(--err);font-weight:600} td.yes{color:var(--ok);font-weight:600}
+.chain{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px;margin:10px 0 16px}
+.node{flex:1 1 190px;background:#fff;border:2px solid var(--ink);border-radius:6px;padding:10px 12px;font-size:.9rem}
+.node b{display:block}
+.node.open{border-color:var(--ok)} .node.lock{border-color:var(--me)}
+.arrow{align-self:center;font-weight:800;color:var(--mute)}
+.q{margin-bottom:20px}
+.q h3{font-size:1.02rem}
+.opt{display:block;width:100%;text-align:left;margin:6px 0;background:#fff;color:var(--ink);border:2px solid var(--line);font-weight:600}
+.opt:hover{border-color:var(--me)}
+.opt.right{border-color:var(--ok);background:#EAF7EE} .opt.wrong{border-color:var(--err);background:#FFF1F1}
+.expl{font-size:.9rem;color:var(--mute);margin:4px 0 0}
+.score{font-weight:800;font-size:1.1rem}
+.gl{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+.gl div{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:10px 12px;font-size:.92rem}
+.gl b{display:block}
+.tl{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+@media(max-width:720px){.tl{grid-template-columns:1fr 1fr}}
+.tl div{border-top:5px solid var(--ink);background:#fff;padding:8px 10px;font-size:.88rem}
+.tl div.tb{border-color:var(--err)} .tl div.tg{border-color:var(--ok)} .tl div.tw{border-color:var(--warn)}
+.tl b{display:block}
+</style>
+</head>
+<body class="s1">
+<nav><div><b>Server 1</b><a href="#lab">Lab</a><a href="#real">Real test</a><a href="#flow">Request flow</a><a href="#why">Why this design</a><a href="#security">Security</a><a href="#routing">Routing</a><a href="#health">Health checks</a><a href="#built">What was built</a><a href="#glossary">Glossary</a><a href="#quizsec">Quiz</a></div></nav>
+<main>
+
+<header class="hero">
+  <div>
+    <div class="tag"><span class="dot"></span> The load balancer sent your request to this server</div>
+    <h1>Server <span>1</span></h1>
+    <p class="lead">You are inside a private subnet with no public IP, and still you can read this page. Play with the lab below to see how the ALB, health checks and the bastion keep the whole thing running.</p>
+  </div>
+  <div class="facts">
+    <div class="fact">Availability Zone<b>AZ1</b></div>
+    <div class="fact">Web server<b>python3 -m http.server 80</b></div>
+    <div class="fact">You opened<b id="host">-</b></div>
+  </div>
+</header>
+<div class="strip">
+  <div class="stat"><b>2</b><span>Availability Zones, so one data centre can fail</span></div>
+  <div class="stat"><b>4</b><span>Subnets: two public, two private</span></div>
+  <div class="stat"><b>3</b><span>EC2 instances: 2 web servers and 1 bastion</span></div>
+  <div class="stat"><b>1</b><span>Public entry point for users: the ALB</span></div>
+</div>
+
+<section id="lab">
+  <h2>The lab</h2>
+  <p class="sub">This is a live simulation of your VPC. Send requests, stop a server, take down a whole Availability Zone, try to break in. Click any part of the diagram to learn what it does, or let the guided tour explain everything step by step.</p>
+  <div class="btns" style="margin-bottom:14px"><button id="tourbtn">Start guided tour</button></div>
+  <div class="panel">
+    <svg viewBox="0 0 900 520" role="group" aria-label="Interactive VPC diagram">
+      <rect x="20" y="86" width="860" height="414" rx="8" fill="none" stroke="#0F2238" stroke-width="2"/>
+      <text x="34" y="108" font-weight="700" font-size="14">Custom VPC</text>
+      <rect x="40" y="124" width="400" height="360" rx="6" fill="#E9EFF6" stroke="#B8C7D9"/>
+      <rect x="460" y="124" width="400" height="360" rx="6" fill="#E9EFF6" stroke="#B8C7D9"/>
+      <text x="54" y="146" font-size="13" font-weight="700">Availability Zone A</text>
+      <text x="474" y="146" font-size="13" font-weight="700">Availability Zone B</text>
+      <rect x="52" y="158" width="376" height="104" rx="4" fill="#fff" stroke="#8AA0B8" stroke-dasharray="5 4"/>
+      <rect x="472" y="158" width="376" height="104" rx="4" fill="#fff" stroke="#8AA0B8" stroke-dasharray="5 4"/>
+      <text x="62" y="252" font-size="12" style="fill:#52667D">Public subnet A</text>
+      <text x="482" y="252" font-size="12" style="fill:#52667D">Public subnet B</text>
+      <rect x="52" y="292" width="376" height="180" rx="4" fill="#DCE5EF" stroke="#8AA0B8"/>
+      <rect x="472" y="292" width="376" height="180" rx="4" fill="#DCE5EF" stroke="#8AA0B8"/>
+      <text x="62" y="464" font-size="12" style="fill:#52667D">Private subnet A (no direct internet)</text>
+      <text x="482" y="464" font-size="12" style="fill:#52667D">Private subnet B (no direct internet)</text>
+
+      <g id="azov" style="display:none;pointer-events:none"><rect x="40" y="124" width="400" height="360" rx="6" fill="rgba(201,42,42,.14)" stroke="#C92A2A" stroke-width="2" stroke-dasharray="8 5"/><text x="428" y="146" text-anchor="end" font-weight="800" font-size="13" style="fill:#C92A2A">AZ A outage</text></g>
+      <line x1="450" y1="56" x2="450" y2="176" stroke="#0F2238" stroke-width="3"/>
+      <line x1="300" y1="212" x2="240" y2="330" stroke="#0F2238" stroke-width="3"/>
+      <line x1="600" y1="212" x2="660" y2="330" stroke="#0F2238" stroke-width="3"/>
+      <line x1="120" y1="236" x2="160" y2="330" stroke="#52667D" stroke-width="2.5" stroke-dasharray="6 5"/>
+
+      <g class="hot" data-info="user" tabindex="0" role="button" aria-label="User">
+        <rect x="390" y="14" width="120" height="42" rx="21" fill="#0F2238"/>
+        <text x="450" y="40" text-anchor="middle" font-weight="700" font-size="15" style="fill:#fff">User / Browser</text>
+      </g>
+      <g class="hot" data-info="igw" tabindex="0" role="button" aria-label="Internet Gateway">
+        <rect x="395" y="76" width="110" height="28" rx="4" fill="#fff" stroke="#0F2238" stroke-width="2"/>
+        <text x="450" y="95" text-anchor="middle" font-size="13" font-weight="700">Internet Gateway</text>
+      </g>
+      <g class="hot" data-info="alb" tabindex="0" role="button" aria-label="Application Load Balancer">
+        <rect x="190" y="176" width="520" height="50" rx="6" fill="#0F2238"/>
+        <text x="450" y="199" text-anchor="middle" font-weight="800" font-size="16" style="fill:#fff">Application Load Balancer</text>
+        <text x="450" y="217" text-anchor="middle" font-size="12" style="fill:#C9D6E6">port 80 listener, health checks, round robin</text>
+      </g>
+      <g class="hot" data-info="bastion" tabindex="0" role="button" aria-label="Bastion host">
+        <rect x="62" y="170" width="116" height="66" rx="5" fill="#fff" stroke="#52667D" stroke-width="2"/>
+        <text x="120" y="196" text-anchor="middle" font-weight="700" font-size="14">Bastion</text>
+        <text x="120" y="214" text-anchor="middle" font-size="12" style="fill:#52667D">SSH, key login</text>
+      </g>
+
+      <g id="g1" class="hot" data-info="srv1" tabindex="0" role="button" aria-label="Server 1">
+        <rect id="r1" x="130" y="330" width="220" height="92" rx="6"/>
+        <circle id="l1" cx="332" cy="346" r="6" fill="#2F9E44"/>
+        <text id="t1" x="240" y="368" text-anchor="middle" font-weight="800" font-size="20">Server 1</text>
+        <text id="s1" x="240" y="390" text-anchor="middle" font-size="12.5">private EC2: running</text>
+        <text id="h1" x="240" y="410" text-anchor="middle" font-size="12.5" font-weight="700">Healthy</text>
+      </g>
+      <g id="g2" class="hot" data-info="srv2" tabindex="0" role="button" aria-label="Server 2">
+        <rect id="r2" x="550" y="330" width="220" height="92" rx="6"/>
+        <circle id="l2" cx="752" cy="346" r="6" fill="#2F9E44"/>
+        <text id="t2" x="660" y="368" text-anchor="middle" font-weight="800" font-size="20">Server 2</text>
+        <text id="s2" x="660" y="390" text-anchor="middle" font-size="12.5">private EC2: running</text>
+        <text id="h2" x="660" y="410" text-anchor="middle" font-size="12.5" font-weight="700">Healthy</text>
+      </g>
+      <text id="pin" x="0" y="321" text-anchor="middle" font-weight="800" font-size="13">You are here</text>
+      <rect id="hl" x="0" y="0" width="0" height="0" rx="8" fill="none" stroke-width="4" stroke-dasharray="10 6" style="display:none;pointer-events:none;stroke:var(--me)"/>
+      <g id="layer"></g>
+    </svg>
+    <div class="info" id="info"><b>Click a part of the diagram</b>Each block explains its job here.</div>
+    <div class="tour" id="tour">
+      <div class="cnt" id="tc"></div>
+      <h3 id="tt"></h3>
+      <p id="tx"></p>
+      <div class="btns"><button class="ghost" id="tback">Back</button><button id="tnext">Next</button><button class="ghost" id="tclose">Close tour</button></div>
+    </div>
+  </div>
+
+  <div class="ctrl">
+    <div class="grp">
+      <h3>Send traffic</h3>
+      <p>Watch the ALB hand requests to each healthy server in turn.</p>
+      <div class="btns">
+        <button id="send">Send request</button>
+        <button id="burst" class="ghost">Send 10</button>
+        <button id="auto" class="ghost">Auto-send</button>
+      </div>
+    </div>
+    <div class="grp">
+      <h3>Break things</h3>
+      <p>Stop a server and see how long the ALB takes to notice.</p>
+      <div class="btns">
+        <button id="tog1" class="bad">Stop Server 1</button>
+        <button id="tog2" class="bad">Stop Server 2</button>
+        <button id="azb" class="bad">AZ A outage</button>
+      </div>
+    </div>
+    <div class="grp">
+      <h3>Admin and attackers</h3>
+      <p>Private servers can only be reached through the bastion.</p>
+      <div class="btns">
+        <button id="direct" class="bad">Attack directly</button>
+        <button id="ssh1" class="ghost">SSH to Server 1</button>
+        <button id="ssh2" class="ghost">SSH to Server 2</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="panel">
+      <h3>Who answered</h3>
+      <div class="bars">
+        <div class="bar"><span>Server 1</span><div class="track"><div class="fill f1" id="sb1"></div></div><span id="sn1">0</span></div>
+        <div class="bar"><span>Server 2</span><div class="track"><div class="fill f2" id="sb2"></div></div><span id="sn2">0</span></div>
+        <div class="bar"><span>Errors</span><div class="track"><div class="fill fe" id="sbe"></div></div><span id="sne">0</span></div>
+      </div>
+      <div class="btns" style="margin-top:14px"><button id="reset" class="ghost">Reset lab</button></div>
+      <p class="note">Health checks run a bit faster here than on AWS: the template checks every 10 seconds, so removal takes about 20 seconds.</p>
+    </div>
+    <div class="panel">
+      <h3>What the ALB is doing</h3>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+</section>
+
+<section id="real">
+  <h2>Real test through your ALB</h2>
+  <p class="sub">The lab above is a simulation. This button sends 10 real requests to the ALB and records which server answered each one. It only works when this page is opened through the ALB DNS name.</p>
+  <div class="panel">
+    <div class="btns">
+      <button id="run">Send 10 real requests</button>
+      <button class="ghost" onclick="location.reload()">Refresh page</button>
+      <button class="ghost" id="clear">Clear history</button>
+    </div>
+    <div class="bars" style="margin-top:16px">
+      <div class="bar"><span>Server 1</span><div class="track"><div class="fill f1" id="b1"></div></div><span id="n1">0</span></div>
+      <div class="bar"><span>Server 2</span><div class="track"><div class="fill f2" id="b2"></div></div><span id="n2">0</span></div>
+    </div>
+    <div class="note" id="note">With round robin you should see roughly 5 and 5.</div>
+    <h3 style="margin-top:16px">Recent visits from this browser</h3>
+    <div class="hist" id="hist"></div>
+  </div>
+</section>
+
+<section id="flow">
+  <h2>What happens to a request</h2>
+  <div class="panel">
+    <ol class="steps">
+      <li><div><b>The browser sends a request to the ALB DNS name</b>An HTTP GET on port 80. The DNS name points to ALB nodes in both public subnets.</div></li>
+      <li><div><b>The Internet Gateway lets it into the VPC</b>The public route table sends 0.0.0.0/0 to the IGW, so the ALB is reachable from the internet.</div></li>
+      <li class="me"><div><b>The ALB picks a healthy server: this time, Server 1</b>Both servers are in the target group. The ALB alternates between them and skips any target that fails its health check.</div></li>
+      <li><div><b>The security group admits only the ALB</b>The private EC2 security group allows HTTP only from the ALB security group. Nobody can reach the server directly.</div></li>
+      <li><div><b>The server returns index.html and the reply goes back the same way</b>You never see the server real address, only the ALB.</div></li>
+    </ol>
+    <details>
+      <summary>How do I log in to a private server?</summary>
+      <p>Jump through the bastion with your own key file and IPs:</p>
+      <pre><code>ssh -i your-key.pem \
+  -o ProxyCommand="ssh -i your-key.pem -W %h:%p ubuntu@BASTION_PUBLIC_IP" \
+  ubuntu@PRIVATE_SERVER_IP</code></pre>
+    </details>
+  </div>
+</section>
+
+<section id="why">
+  <h2>Why it is built this way</h2>
+  <p class="sub">A normal beginner setup is one EC2 instance with a public IP. It works, until it does not. This architecture fixes the weak spots one by one.</p>
+  <div class="cards">
+    <div class="card"><h3>It survives failures</h3><p>Two web servers sit in two different Availability Zones, which are physically separate data centres. If one server or one whole zone dies, the other keeps answering.</p></div>
+    <div class="card"><h3>It hides the servers</h3><p>The web servers live in private subnets with no public IP. Attackers cannot even address them. Only the load balancer is exposed to the internet.</p></div>
+    <div class="card"><h3>It has one stable address</h3><p>Users only know the ALB DNS name. You can stop, replace or add servers behind it and nobody has to change anything.</p></div>
+    <div class="card"><h3>It controls admin access</h3><p>Nobody logs in to the web servers from the internet. Admins go through a single bastion host with key-based login, and only the bastion is allowed to SSH into the private servers.</p></div>
+  </div>
+  <div class="panel wrap" style="margin-top:16px">
+    <table>
+      <tr><th></th><th>One public EC2 server</th><th>This architecture</th></tr>
+      <tr><td><b>Server crashes</b></td><td class="no">Site is down until you fix it</td><td class="yes">ALB moves traffic to the other server</td></tr>
+      <tr><td><b>Data centre fails</b></td><td class="no">Site is down</td><td class="yes">Second Availability Zone keeps serving</td></tr>
+      <tr><td><b>Exposed to the internet</b></td><td class="no">Server itself, on every open port</td><td class="yes">Only the ALB, on port 80</td></tr>
+      <tr><td><b>Admin login</b></td><td class="no">SSH open on the public server</td><td class="yes">SSH only via the bastion, with a key</td></tr>
+      <tr><td><b>Adding capacity</b></td><td class="no">New address, new setup</td><td class="yes">Register another target behind the ALB</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="security">
+  <h2>Security: who can talk to whom</h2>
+  <p class="sub">Security groups are firewalls attached to each instance. The trick is that a rule can say "allow traffic from that security group" instead of an IP address. That is how the private servers accept traffic only from the ALB.</p>
+  <div class="panel">
+    <h3>Web traffic</h3>
+    <div class="chain">
+      <div class="node open"><b>Internet</b>Anyone in the world</div><div class="arrow">HTTP 80</div>
+      <div class="node open"><b>ALB security group</b>Allows port 80 from anywhere</div><div class="arrow">HTTP 80</div>
+      <div class="node lock"><b>Web server security group</b>Allows port 80 only from the ALB group</div>
+    </div>
+    <h3>Admin traffic</h3>
+    <div class="chain">
+      <div class="node open"><b>Admin with key pair</b>Needs the private key file</div><div class="arrow">SSH 22</div>
+      <div class="node open"><b>Bastion security group</b>Allows port 22 from anywhere in this template</div><div class="arrow">SSH 22</div>
+      <div class="node lock"><b>Web server security group</b>SSH only from the bastion group</div>
+    </div>
+    <p class="note">Green borders are open to the public, coloured borders are locked down. Tip: limiting the bastion rule to your own IP address would make it even tighter.</p>
+  </div>
+</section>
+
+<section id="routing">
+  <h2>Routing: what makes a subnet public or private</h2>
+  <p class="sub">A subnet is not public or private by itself. The only difference is its route table. A subnet whose route table sends internet traffic to an Internet Gateway is public.</p>
+  <div class="two" style="grid-template-columns:1fr 1fr">
+    <div class="panel wrap">
+      <h3>Public route table</h3>
+      <table><tr><th>Destination</th><th>Target</th></tr>
+        <tr><td>VPC range</td><td>local</td></tr>
+        <tr><td>0.0.0.0/0</td><td class="yes">Internet Gateway</td></tr></table>
+      <p class="note">Used by public subnets A and B. This is where the ALB and the bastion live.</p>
+    </div>
+    <div class="panel wrap">
+      <h3>Private route table</h3>
+      <table><tr><th>Destination</th><th>Target</th></tr>
+        <tr><td>VPC range</td><td>local</td></tr>
+        <tr><td>0.0.0.0/0</td><td class="no">no route</td></tr></table>
+      <p class="note">Used by private subnets A and B. With no NAT Gateway in this design, the web servers cannot reach the internet either, in or out.</p>
+    </div>
+  </div>
+</section>
+
+<section id="health">
+  <h2>Health checks and failover</h2>
+  <p class="sub">The ALB does not trust that a server is alive. It checks, over and over, by requesting the page itself. A server that stops answering is removed from rotation automatically.</p>
+  <div class="panel">
+    <div class="tl">
+      <div class="tg"><b>Normal</b>The ALB requests the page from each server on a schedule. Both answer 200 OK.</div>
+      <div class="tw"><b>Server stops</b>Checks begin to fail. The ALB still sends it traffic, so some users may see errors.</div>
+      <div class="tb"><b>Marked unhealthy</b>After enough failed checks the ALB stops using it. All traffic goes to the other server.</div>
+      <div class="tg"><b>Recovered</b>After enough passing checks the server rejoins and traffic is shared again.</div>
+    </div>
+    <div class="wrap"><table>
+      <tr><th>Setting</th><th>Value in this template</th><th>What it controls</th></tr>
+      <tr><td>Interval</td><td>10 seconds</td><td>How often each server is checked</td></tr>
+      <tr><td>Timeout</td><td>5 seconds (default)</td><td>How long to wait for an answer</td></tr>
+      <tr><td>Unhealthy threshold</td><td>2 failures</td><td>Failed checks before removal</td></tr>
+      <tr><td>Healthy threshold</td><td>2 successes</td><td>Passed checks before returning</td></tr>
+    </table></div>
+    <p class="note">A server is removed after about 20 seconds of failures and returns after about 20 seconds of passes. The lab above runs a little faster so you can watch the whole cycle.</p>
+    <details><summary>The ALB uses round robin. What does that mean?</summary>
+      <p>Request 1 goes to Server 1, request 2 to Server 2, request 3 to Server 1, and so on. It is the ALB default and it only counts healthy servers. The ALB also spreads traffic across both Availability Zones even if one has fewer servers.</p></details>
+    <details><summary>Why does my browser sometimes show the same server twice?</summary>
+      <p>The ALB balances each request, but your browser can cache a page or reuse a connection, so a refresh may not look like a fresh request. The real test above adds a unique value to every request to avoid that.</p></details>
+    <details><summary>I stopped and started an instance. Why does it stay unhealthy?</summary>
+      <p>The web server is launched by the instance user data, which runs only on the first boot. After a stop and start the instance is running but nothing listens on port 80. Log in through the bastion and run <code>sudo sh -c 'cd /opt/website &amp;&amp; nohup python3 -m http.server 80 &gt;/dev/null 2&gt;&amp;1 &amp;'</code>. To test failover without stopping the instance, use <code>sudo pkill -f http.server</code> instead.</p></details>
+  </div>
+</section>
+
+<section id="built">
+  <h2>What the CloudFormation template built</h2>
+  <p class="sub">One template, one click, the whole network. These are the building blocks.</p>
+  <div class="panel wrap">
+    <table>
+      <tr><th>Resource</th><th>Purpose</th></tr>
+      <tr><td><b>VPC</b></td><td>Your own private network inside AWS</td></tr>
+      <tr><td><b>4 subnets</b></td><td>A public and a private subnet in each of the two Availability Zones</td></tr>
+      <tr><td><b>Internet Gateway</b></td><td>The door between the VPC and the internet</td></tr>
+      <tr><td><b>2 route tables</b></td><td>Public one routes to the IGW, private one stays inside the VPC</td></tr>
+      <tr><td><b>Security groups</b></td><td>Firewalls for the ALB, the web servers and the bastion</td></tr>
+      <tr><td><b>2 private EC2 web servers</b></td><td>Serve this page, one per Availability Zone</td></tr>
+      <tr><td><b>Bastion EC2</b></td><td>The single admin entry point in a public subnet</td></tr>
+      <tr><td><b>Application Load Balancer</b></td><td>Public entry point across both public subnets</td></tr>
+      <tr><td><b>Target group and listener</b></td><td>The list of servers, their health check, and the rule that forwards port 80 traffic</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="glossary">
+  <h2>Glossary</h2>
+  <p class="sub">The words you will hear when you present this.</p>
+  <div class="gl">
+    <div><b>VPC</b>Virtual Private Cloud: your own isolated network in AWS.</div>
+    <div><b>Subnet</b>A slice of the VPC network that lives in one Availability Zone.</div>
+    <div><b>Availability Zone (AZ)</b>One physically separate data centre inside a region.</div>
+    <div><b>Internet Gateway</b>The VPC door to the internet.</div>
+    <div><b>Route table</b>The map that tells traffic where to go next.</div>
+    <div><b>Security group</b>A stateful firewall attached to an instance.</div>
+    <div><b>ALB</b>Application Load Balancer: spreads HTTP requests across servers.</div>
+    <div><b>Target group</b>The set of servers an ALB sends traffic to.</div>
+    <div><b>Health check</b>A regular test the ALB runs to see if a server still works.</div>
+    <div><b>Bastion host</b>A hardened jump server used to reach private machines.</div>
+    <div><b>High availability</b>Staying online even when a component fails.</div>
+    <div><b>Round robin</b>Handing out requests to each server in turn.</div>
+  </div>
+</section>
+
+<section id="quizsec">
+  <h2>Test yourself</h2>
+  <p class="sub">Five quick questions. Good for checking that your audience got it.</p>
+  <div class="panel">
+    <div id="quiz"></div>
+    <div class="score" id="qscore"></div>
+  </div>
+</section>
+
+<footer>Highly Available and Secure Multi-Tier Web Application Infrastructure on AWS using CloudFormation</footer>
+</main>
+
+<script>
+(function(){
+  var ME = 1, OTHER = ME === 1 ? 2 : 1;
+  var COL = {1:'#D9480F', 2:'#0B7A75'}, INK = '#0F2238', ERR = '#C92A2A', GREY = '#52667D';
+  var NS = 'http://www.w3.org/2000/svg';
+  var $ = function(id){return document.getElementById(id);};
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  $('host').textContent = location.host || 'local file';
+
+  /* ---------- diagram setup ---------- */
+  var SRV = {1:[240,330], 2:[660,330]};
+  function paint(n, mine){
+    $('r'+n).setAttribute('fill', mine ? COL[n] : '#fff');
+    $('r'+n).setAttribute('stroke', mine ? COL[n] : '#8AA0B8');
+    $('r'+n).setAttribute('stroke-width', mine ? 3 : 2);
+    $('t'+n).style.fill = mine ? '#fff' : INK;
+    $('s'+n).style.fill = mine ? '#fff' : GREY;
+  }
+  paint(ME, true); paint(OTHER, false);
+  $('pin').setAttribute('x', SRV[ME][0]); $('pin').style.fill = COL[ME];
+
+  var INFO = {
+    user:['User / Browser','Your browser only knows the ALB DNS name. It never sees a server IP address.'],
+    igw:['Internet Gateway','The front door of the VPC. Public subnets route 0.0.0.0/0 to it. Private subnets do not, which is why the web servers cannot be reached from outside.'],
+    alb:['Application Load Balancer','Lives in both public subnets. It listens on port 80, runs health checks on every target and sends each request to a healthy server in turn (round robin).'],
+    bastion:['Bastion host','The single entry point for admins. It has a public IP and needs your private key. From here you hop to the private servers, which accept SSH only from the bastion. In this template SSH to the bastion is open to any IP, so restricting it to your own IP is a good next step.'],
+    srv1:['Server 1','A private EC2 instance in its own AZ. No public IP. HTTP is allowed only from the ALB, SSH only from the bastion. It serves index.html with python3 -m http.server.'],
+    srv2:['Server 2','A private EC2 instance in its own AZ. No public IP. HTTP is allowed only from the ALB, SSH only from the bastion. It serves index.html with python3 -m http.server.']
+  };
+  Array.prototype.forEach.call(document.querySelectorAll('[data-info]'), function(g){
+    function show(){ var i = INFO[g.getAttribute('data-info')]; $('info').innerHTML = '<b>' + i[0] + '</b>' + i[1]; }
+    g.addEventListener('click', show);
+    g.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); show(); } });
+  });
+
+  /* ---------- packet animation ---------- */
+  function fly(pts, color, ms){
+    return new Promise(function(res){
+      var c = document.createElementNS(NS,'circle');
+      c.setAttribute('r','8'); c.setAttribute('fill', color); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','2');
+      $('layer').appendChild(c);
+      var segs = [], total = 0, i;
+      for(i = 1; i < pts.length; i++){ var l = Math.hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]); segs.push(l); total += l; }
+      var dur = reduce ? 50 : ms, t0 = null;
+      function step(t){
+        if(t0 === null) t0 = t;
+        var p = Math.min(1, (t - t0) / dur), d = p * total, k = 0;
+        while(k < segs.length - 1 && d > segs[k]){ d -= segs[k]; k++; }
+        var f = segs[k] ? d / segs[k] : 1;
+        c.setAttribute('cx', pts[k][0] + (pts[k+1][0]-pts[k][0]) * f);
+        c.setAttribute('cy', pts[k][1] + (pts[k+1][1]-pts[k][1]) * f);
+        if(p < 1) requestAnimationFrame(step); else { c.remove(); res(); }
+      }
+      requestAnimationFrame(step);
+    });
+  }
+  function cross(x, y){
+    var t = document.createElementNS(NS,'text');
+    t.setAttribute('x', x); t.setAttribute('y', y); t.setAttribute('text-anchor','middle');
+    t.setAttribute('font-size','38'); t.setAttribute('font-weight','800'); t.style.fill = ERR;
+    t.textContent = '\u2715'; $('layer').appendChild(t);
+    setTimeout(function(){ t.remove(); }, 1300);
+  }
+  var TO_ALB = [[450,56],[450,94],[450,176],[450,201]];
+  var BACK = [[450,201],[450,176],[450,94],[450,56]];
+  function toSrv(n){ return [[450,201],[n === 1 ? 300 : 600, 212], SRV[n]]; }
+  function fromSrv(n){ return toSrv(n).slice().reverse().concat(BACK.slice(1)); }
+
+  /* ---------- state ---------- */
+  var S = {1:{up:true,status:'healthy',streak:0}, 2:{up:true,status:'healthy',streak:0}};
+  var st = {1:0, 2:0, err:0}, rr = 0, reqN = 0, azDown = false;
+
+  function log(kind, msg){
+    var d = document.createElement('div');
+    d.className = 'ent ' + (kind === 'info' ? 'sys' : kind);
+    d.innerHTML = '<time>' + new Date().toLocaleTimeString() + '</time>' + msg;
+    var box = $('log'); box.insertBefore(d, box.firstChild);
+    while(box.children.length > 40) box.removeChild(box.lastChild);
+  }
+  function stats(){
+    var tot = Math.max(1, st[1] + st[2] + st.err);
+    [1,2].forEach(function(n){ $('sn'+n).textContent = st[n]; $('sb'+n).style.width = (st[n]/tot*100) + '%'; });
+    $('sne').textContent = st.err; $('sbe').style.width = (st.err/tot*100) + '%';
+  }
+  var LABEL = {
+    healthy:['Healthy','#2F9E44'],
+    unhealthy:['Unhealthy: gets no traffic','#C92A2A']
+  };
+  function draw(n){
+    var s = S[n], txt, color;
+    if(s.status === 'healthy'){ txt = s.up ? 'Healthy' : 'Health check failed 0/2'; color = s.up ? '#2F9E44' : '#E8A317'; }
+    else if(s.status === 'failing'){ txt = 'Health check failed ' + s.streak + '/2'; color = '#E8A317'; }
+    else if(s.status === 'unhealthy'){ txt = 'Unhealthy: gets no traffic'; color = '#C92A2A'; }
+    else { txt = 'Recovering ' + s.streak + '/2'; color = '#E8A317'; }
+    var h = $('h'+n); h.textContent = txt;
+    h.style.fill = (n === ME) ? '#fff' : color;
+    if(n === ME && color !== '#2F9E44'){ h.style.fill = '#FFE8A3'; }
+    $('l'+n).setAttribute('fill', s.up ? '#2F9E44' : '#C92A2A');
+    $('s'+n).textContent = 'private EC2: ' + (s.up ? 'running' : 'stopped');
+    $('g'+n).style.opacity = s.up ? 1 : .55;
+    $('tog'+n).textContent = (s.up ? 'Stop Server ' : 'Start Server ') + n;
+    $('tog'+n).className = s.up ? 'bad' : 'ghost';
+    $('tog1').disabled = !!azDown;
+  }
+  draw(1); draw(2);
+
+  function tick(){
+    [1,2].forEach(function(n){
+      var s = S[n];
+      if(!s.up){
+        if(s.status === 'healthy' || s.status === 'failing'){
+          s.streak++;
+          if(s.streak >= 2){ s.status = 'unhealthy'; log('info','<b>Server '+n+'</b> failed 2 health checks. The ALB marks it unhealthy and stops sending it traffic.'); }
+          else s.status = 'failing';
+        }
+      } else if(s.status === 'unhealthy' || s.status === 'recovering'){
+        s.streak++;
+        if(s.streak >= 2){ s.status = 'healthy'; s.streak = 0; log('info','<b>Server '+n+'</b> passed 2 health checks. The ALB puts it back in rotation.'); }
+        else s.status = 'recovering';
+      }
+      draw(n);
+    });
+  }
+  setInterval(tick, 1500);
+
+  function toggle(n){
+    var s = S[n];
+    s.up = !s.up; s.streak = 0;
+    if(s.up){
+      if(s.status === 'failing') s.status = 'healthy';
+      else if(s.status === 'unhealthy') s.status = 'unhealthy';
+      log('info','You started <b>Server '+n+'</b>. The ALB still treats it as unhealthy until it passes health checks.');
+    } else {
+      log('info','You stopped <b>Server '+n+'</b>. The ALB does not know yet. It needs failed health checks first.');
+    }
+    draw(n);
+  }
+  $('tog1').onclick = function(){ toggle(1); };
+  $('tog2').onclick = function(){ toggle(2); };
+
+  /* ---------- requests ---------- */
+  function send(){
+    reqN++; var id = reqN;
+    fly(TO_ALB, INK, 520).then(function(){
+      var pool = [1,2].filter(function(n){ return S[n].status === 'healthy' || S[n].status === 'failing'; });
+      if(!pool.length){
+        st.err++; stats();
+        log('err','#'+id+' No healthy targets. The ALB answers <b>503 Service Unavailable</b>.');
+        cross(450, 255);
+        return fly(BACK, ERR, 500);
+      }
+      var t = pool[rr % pool.length]; rr++;
+      return fly(toSrv(t), COL[t], 480).then(function(){
+        if(!S[t].up){
+          st.err++; stats();
+          log('err','#'+id+' The ALB picked <b>Server '+t+'</b> but it is stopped and not yet marked unhealthy: <b>504 Gateway Timeout</b>.');
+          cross(SRV[t][0], SRV[t][1] - 10);
+          return fly(fromSrv(t), ERR, 900);
+        }
+        st[t]++; stats();
+        log('ok'+t,'#'+id+' The ALB picked <b>Server '+t+'</b> (round robin, healthy): <b>200 OK</b>.');
+        return fly(fromSrv(t), COL[t], 900);
+      });
+    });
+  }
+  $('send').onclick = send;
+  $('burst').onclick = function(){ for(var i = 0; i < 10; i++){ setTimeout(send, i * 450); } };
+  var timer = null;
+  $('auto').onclick = function(){
+    if(timer){ clearInterval(timer); timer = null; $('auto').className = 'ghost'; $('auto').textContent = 'Auto-send'; }
+    else { send(); timer = setInterval(send, 1200); $('auto').className = 'on'; $('auto').textContent = 'Stop auto-send'; }
+  };
+
+  $('direct').onclick = function(){
+    var n = Math.random() < .5 ? 1 : 2;
+    log('info','An attacker tries to reach the private IP of <b>Server '+n+'</b> directly from the internet.');
+    fly([[450,56],[450,80]], ERR, 450).then(function(){
+      cross(450, 130);
+      log('err','Blocked. The server has no public IP, and no route leads from the internet to a private subnet. Only the ALB can talk to it.');
+    });
+  };
+  function ssh(n){
+    var pts = [[450,56],[450,112],[120,112],[120,203],[120,236]];
+    pts = pts.concat(n === 1 ? [[160,330]] : [[120,310],[660,310],[660,330]]);
+    log('info','SSH attempt: you to the bastion (key login), then on to <b>Server '+n+'</b>.');
+    fly(pts, GREY, 1700).then(function(){
+      if(S[n].up){ log('ok'+n,'Connected to <b>Server '+n+'</b> through the bastion. You can now inspect its logs.'); }
+      else { cross(SRV[n][0], SRV[n][1] - 10); log('err','SSH to <b>Server '+n+'</b> timed out because the instance is stopped.'); }
+    });
+  }
+  $('ssh1').onclick = function(){ ssh(1); };
+  $('ssh2').onclick = function(){ ssh(2); };
+
+  $('reset').onclick = function(){
+    if(timer){ $('auto').onclick(); }
+    azDown = false; $('azov').style.display = 'none'; $('azb').textContent = 'AZ A outage'; $('azb').className = 'bad';
+    S = {1:{up:true,status:'healthy',streak:0}, 2:{up:true,status:'healthy',streak:0}};
+    st = {1:0, 2:0, err:0}; rr = 0; reqN = 0;
+    draw(1); draw(2); stats(); $('log').innerHTML = '';
+    log('info','Lab reset. Both servers are running and healthy.');
+  };
+  log('info','Lab ready. Press <b>Send request</b> and watch the ALB alternate between the servers.');
+
+  /* ---------- visit history (shared by both servers via the ALB address) ---------- */
+  var KEY = 'alb-demo-history';
+  function load(){ try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch(e){ return []; } }
+  function save(h){ try { localStorage.setItem(KEY, JSON.stringify(h.slice(-14))); } catch(e){} }
+  function drawHist(){
+    var h = load(), box = $('hist'); box.innerHTML = '';
+    if(!h.length){ box.textContent = 'No visits yet.'; return; }
+    h.forEach(function(x){ var s = document.createElement('span'); s.className = 'chip c' + x; s.textContent = 'Server ' + x; box.appendChild(s); });
+  }
+  var hist = load(); hist.push(ME); save(hist); drawHist();
+  $('clear').onclick = function(){ save([]); try{ localStorage.removeItem(KEY); }catch(e){} drawHist(); };
+
+  /* ---------- real test through the ALB ---------- */
+  var running = false;
+  $('run').onclick = function(){
+    if(running) return; running = true;
+    var btn = $('run'); btn.disabled = true;
+    var counts = {1:0, 2:0, fail:0}, total = 10, done = 0;
+    $('note').textContent = 'Sending requests...';
+    function show(){
+      $('n1').textContent = counts[1]; $('n2').textContent = counts[2];
+      $('b1').style.width = (counts[1]/total*100) + '%'; $('b2').style.width = (counts[2]/total*100) + '%';
+    }
+    show();
+    function next(){
+      if(done >= total){ finish(); return; }
+      fetch(location.pathname + '?r=' + Date.now() + '_' + done, {cache:'no-store'})
+        .then(function(r){ return r.text(); })
+        .then(function(t){ var m = t.match(/name="server-id"\s+content="(\d)"/); if(m){ counts[m[1]]++; } else { counts.fail++; } })
+        .catch(function(){ counts.fail++; })
+        .then(function(){ done++; show(); setTimeout(next, 250); });
+    }
+    function finish(){
+      running = false; btn.disabled = false;
+      var msg;
+      if(counts.fail === total) msg = 'No response received. Is this page opened through the ALB DNS name?';
+      else if(counts[1] && counts[2]) msg = 'Both servers responded: load balancing is working.';
+      else msg = 'All requests went to one server. Either the other server is stopped or unhealthy, or the browser reused one connection. Try again.';
+      if(counts.fail && counts.fail !== total) msg += ' (' + counts.fail + ' request(s) failed.)';
+      $('note').textContent = msg;
+    }
+    next();
+  };
+
+  /* ---------- AZ outage ---------- */
+  function azSet(down){
+    azDown = down;
+    $('azov').style.display = down ? 'block' : 'none';
+    if(down){
+      if(S[1].up) toggle(1);
+      log('err','<b>Availability Zone A is down.</b> Server 1 is gone and the ALB loses its AZ A node. Once health checks catch up, Server 2 in AZ B answers everything.');
+    } else {
+      if(!S[1].up) toggle(1);
+      log('info','Availability Zone A is back.');
+    }
+    $('azb').textContent = down ? 'Restore AZ A' : 'AZ A outage';
+    $('azb').className = down ? 'ghost' : 'bad';
+    draw(1);
+  }
+  $('azb').onclick = function(){ azSet(!azDown); };
+
+  /* ---------- guided tour ---------- */
+  var TOUR = [
+    {f:[20,86,860,414], title:'Meet your VPC', text:'This box is a Virtual Private Cloud: your own private network inside AWS. Everything we build lives in here, and nothing gets in or out unless we allow it.'},
+    {f:[40,124,400,360], title:'Two Availability Zones', text:'Availability Zones are physically separate data centres. We use two of them, A and B, and put a copy of everything in each. That is the foundation of high availability.'},
+    {f:[52,158,376,104], title:'Public and private subnets', text:'Each zone has a public subnet (top) and a private subnet (bottom). Public means it has a route to the internet. Private means it does not. The difference is only the route table.'},
+    {f:[395,76,110,28], title:'The front door', text:'The Internet Gateway is the only way in and out of the VPC for internet traffic. Watch a user request enter through it.', act:function(){ send(); }},
+    {f:[190,176,520,50], title:'The Application Load Balancer', text:'The ALB is the one public address users know. It receives each request and hands it to a healthy server, taking turns. Here it alternates between Server 1 and Server 2.', act:function(){ send(); setTimeout(send, 900); }},
+    {f:[130,330,640,92], title:'Private web servers', text:'The real work happens here, in private subnets with no public IP. Their firewall only accepts web traffic from the ALB, so nobody can attack them directly.', act:function(){ $('direct').onclick(); }},
+    {f:[62,170,116,66], title:'The bastion host', text:'Admins still need to log in sometimes. They connect to the bastion with their key and hop from there to a private server. Only the bastion is allowed to SSH into the web servers.', act:function(){ ssh(1); }},
+    {f:[130,330,220,92], title:'Now something breaks', text:'We just stopped Server 1. For a short time the ALB does not know, so a few requests fail. After a couple of failed health checks it marks the server unhealthy and stops using it.', act:function(){ if(S[1].up) toggle(1); $('burst').onclick(); }},
+    {f:[20,86,860,414], title:'The site never went down', text:'After the health checks catch up, every request is answered by Server 2. We start Server 1 again and it rejoins on its own. Two zones, two servers, one address: that is high availability.', act:function(){ if(!S[1].up && !azDown) toggle(1); }}
+  ];
+  var ti = 0;
+  function tourShow(i){
+    ti = i; var t = TOUR[i], h = $('hl');
+    $('tour').className = 'tour show';
+    $('tc').textContent = 'Step ' + (i+1) + ' of ' + TOUR.length;
+    $('tt').textContent = t.title; $('tx').textContent = t.text;
+    h.setAttribute('x', t.f[0]-6); h.setAttribute('y', t.f[1]-6);
+    h.setAttribute('width', t.f[2]+12); h.setAttribute('height', t.f[3]+12);
+    h.style.display = 'block';
+    $('tback').disabled = (i === 0);
+    $('tnext').textContent = (i === TOUR.length - 1) ? 'Finish' : 'Next';
+    if(t.act) t.act();
+  }
+  function tourEnd(){ $('tour').className = 'tour'; $('hl').style.display = 'none'; }
+  $('tourbtn').onclick = function(){ document.getElementById('lab').scrollIntoView(); tourShow(0); };
+  $('tnext').onclick = function(){ if(ti >= TOUR.length - 1) tourEnd(); else tourShow(ti + 1); };
+  $('tback').onclick = function(){ if(ti > 0) tourShow(ti - 1); };
+  $('tclose').onclick = tourEnd;
+
+  /* ---------- quiz ---------- */
+  var QZ = [
+    {q:'Why do the web servers have no public IP address?', o:['To save money on IP addresses','So nobody on the internet can reach them directly','Because EC2 cannot have public IPs'], a:1, e:'Without a public IP and a route from the Internet Gateway, only resources inside the VPC, like the ALB, can talk to them.'},
+    {q:'A web server stops answering. What does the ALB do?', o:['It keeps sending traffic and hopes','It shuts down the whole site','After failed health checks it stops sending that server traffic'], a:2, e:'Health checks mark the server unhealthy, and the ALB routes everything to the remaining healthy target.'},
+    {q:'Why are the servers spread over two Availability Zones?', o:['So one data centre failing does not take the site down','To make the page load twice as fast','Because AWS requires exactly two'], a:0, e:'Availability Zones fail independently, so the second zone keeps serving users.'},
+    {q:'How does an admin log in to a private server?', o:['Directly with SSH from home','Through the bastion host','Through the load balancer'], a:1, e:'The bastion is the single entry point. The private servers accept SSH only from the bastion security group.'},
+    {q:'What lets internet traffic enter the VPC at all?', o:['The Internet Gateway with a public route table','The private route table','The bastion host'], a:0, e:'Public subnets route 0.0.0.0/0 to the Internet Gateway. Private subnets have no such route.'}
+  ];
+  var qScore = 0, qDone = 0;
+  QZ.forEach(function(item, qi){
+    var d = document.createElement('div'); d.className = 'q';
+    var h = document.createElement('h3'); h.textContent = (qi+1) + '. ' + item.q; d.appendChild(h);
+    var ex = document.createElement('p'); ex.className = 'expl';
+    item.o.forEach(function(txt, oi){
+      var b = document.createElement('button'); b.className = 'opt'; b.textContent = txt;
+      b.onclick = function(){
+        if(d.getAttribute('data-done')) return;
+        d.setAttribute('data-done','1'); qDone++;
+        var btns = d.querySelectorAll('.opt');
+        btns[item.a].className = 'opt right';
+        if(oi === item.a){ qScore++; ex.textContent = 'Correct. ' + item.e; }
+        else { b.className = 'opt wrong'; ex.textContent = 'Not quite. ' + item.e; }
+        if(qDone === QZ.length){ $('qscore').textContent = 'You scored ' + qScore + ' out of ' + QZ.length + '.'; }
+      };
+      d.appendChild(b);
+    });
+    d.appendChild(ex);
+    $('quiz').appendChild(d);
+  });
+})();
+</script>
+</body>
+</html>
